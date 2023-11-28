@@ -34,7 +34,7 @@ async function getproductsType(req, res){
 
 async function getProductDetails(req, res){
     try{
-        const user_id =  42;
+        const user_id =  req.user.authorization;
         const productID = req.params.id;
         const product = await Products.findByPk(productID);
         const reactions = await Reaction.findAll({
