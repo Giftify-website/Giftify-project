@@ -37,8 +37,16 @@ module.exports = (sequelize) => {
           primaryKey: true,
           autoIncrement: true,
         },
+        user_payment_id: {
+            type: DataTypes.BIGINT,
+            allowNull: false,
+        },
+        order_payment_id: {
+            type: DataTypes.BIGINT,
+            allowNull: false,
+        },
         total: {
-          type: DataTypes.DOUBLE, // or DataTypes.DECIMAL
+          type: DataTypes.DOUBLE,
           allowNull: false,
         },
         payment_at: {
@@ -48,8 +56,8 @@ module.exports = (sequelize) => {
       });
       
       // Define associations
-    //   Payments.belongsTo(sequelize.models.User, { foreignKey: 'user_payment_id' });
-    Payments.belongsTo(sequelize.models.Order, { foreignKey: 'order_payment_id' });
+    // Payments.belongsTo(sequelize.models.User, { foreignKey: 'user_payment_id' });
+    // Payments.belongsTo(sequelize.models.Order, { foreignKey: 'order_payment_id' });
       
       return Payments;
 };

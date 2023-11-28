@@ -95,6 +95,7 @@ async function addReaction(req, res){
 
 async function addToOreders(req, res){
     try{
+        //here you need to add map to take all products
         const userID = req.user.id || 0;
         const { product_order_id, city, order_price, order_count } = req.body;
         const order = await Order.create({
@@ -102,7 +103,9 @@ async function addToOreders(req, res){
             product_order_id : product_order_id,
             city : city || null,
             order_price : order_price,
-            order_count : order_count
+            order_count : order_count,
+            is_payed : false,
+            order_for : null
         });
         res.status(201).json(order);
     }catch(error){
@@ -112,14 +115,15 @@ async function addToOreders(req, res){
 
 async function addToWishlist(req, res){
     try{
-        const userID = req.user.id;
+        const userID = req.body.id;
         const productID = req.params.id;
         const wishlist = await Wishlist.create({
             user_wishlist_id : userID,
             product_wishlist_id : productID,
         });
-        res.staus(201).json(wishlist);
+        res.status(201).json(wishlist);
     }catch(error){
+        console.log(error);
         res.status(500).json('error in add to wish list');
     }
 };
@@ -138,7 +142,32 @@ async function sendContactus(req, res){
     }catch(error){
         res.status(500).json('error in send contactus message')
     }
-}
+};
+
+async function removeFromOrders(req, res){
+    try{
+        const userID = req.user.id;
+        
+    }catch(error){
+        res.status(500).json("error in remove from orders");
+    }
+};
+
+async function updateReaction(){
+    try{
+
+    }catch(error){
+        res.status(500).json('error in update reaction');
+    }
+};
+
+async function deleteReaction(req, res){
+    try{
+
+    }catch(error){
+        res.status(500).json('error in delete reaction');
+    }
+};
 
 module.exports = {
     getproductsCategory,
@@ -148,6 +177,9 @@ module.exports = {
     addToOreders,
     addToWishlist,
     sendContactus,
+    removeFromOrders,
+    updateReaction,
+    deleteReaction,
 };
         // if (ractions.length > 1){
 
