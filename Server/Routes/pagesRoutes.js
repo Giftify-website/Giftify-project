@@ -11,12 +11,15 @@ router.post('/addReaction/:id', pagesController.addReaction);
 router.put('updateReaction', pagesController.updateReaction);
 router.put('deleteReaction', pagesController.deleteReaction);
 
+router.get('/getOrders', pagesController.getOrders);
+router.get('/getCart', pagesController.getCart);
 router.post('/addToOrdaers', pagesController.addToOreders);
+router.put('/removeFromOrders/:itemId', pagesController.removeFromOrders);
+router.put('/orderIncrement/:itemId', pagesController.increment);
+router.put('/orderDecrement/:itemId', pagesController.decrement)
+
 router.post('/addToWishlist/:id', pagesController.addToWishlist);
 
 router.post('/sendContactus', pagesController.sendContactus);
-
-router.put('/removeFromOrders', pagesController.removeFromOrders);
-
 
 module.exports = router;

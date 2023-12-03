@@ -20,7 +20,7 @@ const Profile = () => {
   const [orderHistoryData, setOrderHistoryData] = useState(null);
 
   const fetchUserData = () => {
-    axios.get(`http://localhost:5001/user/${userId}`)
+    axios.get(`http://localhost:8080/getUserData`)
       .then(response => {
         setUserData(response.data);
         setNewUserData({ username: response.data.username, email: response.data.email });
@@ -29,7 +29,7 @@ const Profile = () => {
         console.error('Error fetching user data: ', error);
       });
 
-    axios.put(`http://localhost:4000/user/${userId}`)
+    axios.put(`http://localhost:8080/UpdateUserData`)
       .then(response => {
         setUserImage(`http://localhost:4000/${response.data.image}`);
       })
@@ -39,7 +39,7 @@ const Profile = () => {
   };
 
   const fetchWishlistData = () => {
-    axios.get(`http://localhost:5001/user/${userId}/wishlist`)
+    axios.get(`http://localhost:8080/getwishlist`)
       .then(response => {
         setWishlistData(response.data);
       })
@@ -49,7 +49,7 @@ const Profile = () => {
   };
 
   const fetchOrderHistoryData = () => {
-    axios.get(`http://localhost:5001/user/${userId}/orderhistory`)
+    axios.get(`http://localhost:8080/getOrderHistory`)
       .then(response => {
         setOrderHistoryData(response.data);
       })
@@ -119,8 +119,8 @@ const Profile = () => {
           className="h-32 w-32 rounded-full mx-auto mb-4"
         />
         <div className="text-center">
-          <span className="font-medium text-gray-900">{userData.username}</span>
-          <span className="text-gray-500 block">{userData.email}</span>
+          <span className="font-medium text-gray-900">{userData.f_name}</span>
+          <span className="text-gray-500 block">{userData.user_email}</span>
         </div>
       </div>
 
@@ -224,8 +224,8 @@ const Profile = () => {
           <div>
             <h2>Order History:</h2>
             {orderHistoryData && orderHistoryData.map((order) => (
-              <div key={order.id}>
-                <p>{order.orderNumber}</p>
+              <div key={order.order_id}>
+                <p>{order.order_id}</p>
               </div>
             ))}
           </div>
@@ -235,8 +235,8 @@ const Profile = () => {
           <div>
             <h2>Wishlist:</h2>
             {wishlistData && wishlistData.map((item) => (
-              <div key={item.id}>
-                <p>{item.name}</p>
+              <div key={item.Product.Product_id}>
+                <p>{item.Product.product_name}</p>
               </div>
             ))}
           </div>

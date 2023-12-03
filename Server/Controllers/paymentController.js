@@ -2,56 +2,131 @@ const { Users, Role, Products , ContactUs , Reaction, Order, Wishlist, Payments 
 const Stripe = require('stripe');
 const { route } = require('../Routes/pagesRoutes');
 const router = require('../Routes/pagesRoutes');
+const { Sequelize } = require('sequelize');
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 async function addRecipientInfo(req, res){
     try{
-        const userID = req.user.id;
-        const { recipien_name,
-                recipien_phone_number,
-                recipien_card_id,
-                card_text,
-                recipien_location,
-                order_id,
-            } = req.body;
-        const recipient = Recipient.create({
-            recipien_name : recipien_name,
-            recipien_phone_number : recipien_phone_number,
-            recipien_card_id : recipien_card_id,
-            card_text : card_text,
-            recipien_location : recipien_location,
+        const userID = 45;
+        const {recipientName, phoneNumber, card_id, giftMessage, location, deliveryDate} = req.body;
+        const recipient = await Recipient.create({
+            recipient_name : recipientName,
+            recipient_phone_number : phoneNumber,
+            recipient_card_id : 66,
+            card_text : giftMessage,
+            recipient_location : location,
+            recipient_date : deliveryDate,
         });
         const order_for = recipient.recipient_id;
-        const theOrder = await Order.update(
-            {order_for}, 
-            {
-                where: { order_id: order_id },
-                returning: true,
+        const allOrders = await Order.findAll({
+            where: {
+                user_order_id : userID,
+                is_deleted : false,
+                is_payed : false,
+            }
+        });
+        await Order.update({ order_for },{
+                where : {
+                    order_id: { [Sequelize.Op.in]: allOrders.map(order => order.dataValues.order_id) },
+                }
             });
+        res.redirect(`http://localhost:8080/create-checkout-session`);
     }catch(error){
+        console.log(error);
         res.status(500).json('error in Recipient Info');
     }
 };
 
 async function getPayment(req, res){
-    // const userID = req.user.id;
-    // let total = 0;
-    // const line_items = req.body.cart.map((product) =>{
-            // total = total + (product.price * product.count);
-    //     return {
-    //         price_data : {
-    //             currency : "usd",
-    //             product_data : {
-    //                 name : product.product_name,
-    //                 images : [product.imgurl],
-    //                 description : product.description,
-    //             },
-    //             unit_amount : product.price,
-    //         },
-    //         quantity: product.count,
-    //     }
-    // });
+    try{
+        const userID = 45;
+        const allOrders = await Order.findAll({
+            where : {
+                user_order_id : userID,
+                is_deleted : false,
+                is_payed : false,
+            }
+        });
+        let total = 0;
+        let items = [];
+        for (let i = 0; i < allOrders.length; i++){
+            total = total + (allOrders[i].order_price * allOrders[i].order_count);
+            let theProduct = await Products.findByPk(allOrders[i].product_order_id);
+            console.log(allOrders[i].order_price)
+            items.push({
+                price_data : {
+                    currency : "usd",
+                    product_data : {
+                        name : `${theProduct.product_name}`,
+                        images : [theProduct.img_url],
+                        description : `${theProduct.description}`,
+                    },
+                    unit_amount : `${allOrders[i].order_price}00`,
+                },
+                quantity: allOrders[i].order_count,
+            })
+        };
+        const successUrl = `http://localhost:8080/homepage?orderIds=${allOrders.map(order => order.order_id).join(',')}&total=${total}`;
+        const cancelUrl = `http://localhost:8080/notResponding`;
     const session = await stripe.checkout.sessions.create({
+        line_items : items,
+        mode: 'payment',
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      });
+      res.status(200).json(session.url);
+    }catch(error){
+        console.log(error);
+        res.status(500).json('error in payment controller')
+    }
+};
+
+async function afterPayment(req, res){
+    try{
+        const orderIds = req.query.orderIds.split(',');
+        const total = req.query.total;
+        for(let i = 0; i < orderIds.length; i++){
+            await Payments.create({
+                user_payment_id : 45,
+                order_payment_id: orderIds[i],
+                total : total,
+                payment_at: new Date(),
+              });
+        };
+        const is_deleted = true;
+        const is_payed = true;
+        for(let i = 0; i < orderIds.length; i++){
+            await Order.update(
+                {is_deleted, is_payed }, 
+                {
+                    where: { order_id: orderIds[i] },
+                    returning: true,
+                });
+        };
+        res.redirect('http://localhost:3000/');
+    }catch(errro){
+        console.log(errro);
+        res.status(500).json('error in homepage router');
+    };
+};
+
+module.exports = {
+    getPayment,
+    addRecipientInfo,
+    afterPayment,
+};
+
+
+        // for (let i = 0; i < allOrders.length ; i++){
+        //     let theOrder = await Order.update(
+        //         {order_for}, 
+        //         {
+        //             where: { order_id : allOrders[i].dataValues.order_id },
+        //             returning: true,
+        //         });
+        // };
+
+
         // shipping_address_collection: {
         //     allowed_countries: ['US', 'JO'],
         //   },
@@ -97,50 +172,8 @@ async function getPayment(req, res){
         //       },
         //     },
         //   ],
-        line_items: [
-          {
-            price_data : {
-                currency : "usd",
-                product_data : {
-                    name : "iphone 12 promax",
-                    images : ['https://i5.walmartimages.com/seo/Verizon-Apple-iPhone-15-Pro-Max-256GB-Natural-Titanium_43b58742-b6ad-491a-a795-e6c2eb6bcc6f.d6fa026332e1941b129f607c592844ab.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF'],
-                    description : "this is a phone",
-                },
-                unit_amount : 10210,
-            },
-            quantity: 2,
-          },
-          {
-            price_data : {
-                currency : "usd",
-                product_data : {
-                    name : "iphone 12 promax",
-                    images : ['https://i5.walmartimages.com/seo/Verizon-Apple-iPhone-15-Pro-Max-256GB-Natural-Titanium_43b58742-b6ad-491a-a795-e6c2eb6bcc6f.d6fa026332e1941b129f607c592844ab.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF'],
-                    description : "this is a phone",
-                },
-                unit_amount : 10210,
-            },
-            quantity: 2,
-          },
-          {
-            price_data : {
-                currency : "usd",
-                product_data : {
-                    name : "iphone 12 promax",
-                    images : ['https://i5.walmartimages.com/seo/Verizon-Apple-iPhone-15-Pro-Max-256GB-Natural-Titanium_43b58742-b6ad-491a-a795-e6c2eb6bcc6f.d6fa026332e1941b129f607c592844ab.jpeg?odnHeight=768&odnWidth=768&odnBg=FFFFFF'],
-                    description : "this is a phone",
-                },
-                unit_amount : 10210,
-            },
-            quantity: 2,
-          },
-        ],
-        mode: 'payment',
-        success_url: `http://localhost:8080/homepage`,
-        cancel_url: `http://localhost:8080/notResponding`,
-      });
 
-    //   const payment = Payments.create({
+            //   const payment = Payments.create({
     //     user_payment_id : userID,
     //     order_payment_id: orderID,
     //     total : total,
@@ -154,11 +187,3 @@ async function getPayment(req, res){
     //         where: { order_id: order_id },
     //         returning: true,
     //     });
-
-      res.redirect(session.url);
-};
-
-module.exports = {
-    getPayment,
-    addRecipientInfo,
-};
